@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* ── Design Tokens: Dapoer Artisan Admin ── */
+
+@theme {
+  /* ─── Colors ─── */
+  --color-primary: #456518;
+  --color-primary-light: #5d7f30;
+  --color-primary-dark: #304f01;
+  --color-primary-container: #5d7f30;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-secondary: #556340;
+  --color-secondary-light: #6B7A53;
+  --color-secondary-dark: #3D4B2A;
+  --color-secondary-container: #D8E9BC;
+  --color-secondary-foreground: #FFFFFF;
+
+  --color-accent: #6B8E3D;
+  --color-accent-light: #8FB55E;
+  --color-accent-foreground: #FFFFFF;
+
+  --color-tertiary: #86447c;
+  --color-tertiary-container: #a25c96;
+  --color-tertiary-foreground: #FFFFFF;
+
+  --color-background: #F8F9FA;
+  --color-background-alt: #F3F4F5;
+  --color-foreground: #191C1D;
+
+  --color-surface: #FFFFFF;
+  --color-surface-dim: #D9DADB;
+  --color-surface-container: #EDEEEF;
+  --color-surface-container-low: #F3F4F5;
+  --color-surface-container-high: #E7E8E9;
+  --color-surface-container-highest: #E1E3E4;
+
+  --color-muted: #F3F4F5;
+  --color-muted-foreground: #44493B;
+
+  --color-card: #FFFFFF;
+  --color-card-foreground: #191C1D;
+
+  --color-border: #E1E3E4;
+  --color-input: #E1E3E4;
+  --color-ring: #456518;
+
+  --color-destructive: #BA1A1A;
+  --color-destructive-foreground: #FFFFFF;
+
+  --color-success: #388E3C;
+  --color-warning: #F57C00;
+  --color-info: #1976D2;
+
+  /* Status Colors */
+  --color-status-pending: #F57C00;
+  --color-status-processing: #1976D2;
+  --color-status-completed: #388E3C;
+  --color-status-cancelled: #BA1A1A;
+  --color-status-ready: #6B8E3D;
+
+  /* ─── Typography ─── */
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+
+  /* ─── Border Radius ─── */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* ─── Shadows ─── */
+  --shadow-xs: 0 1px 2px rgba(25, 28, 29, 0.04);
+  --shadow-sm: 0 1px 4px rgba(25, 28, 29, 0.05);
+  --shadow-md: 0 2px 8px rgba(25, 28, 29, 0.08);
+  --shadow-lg: 0 4px 16px rgba(25, 28, 29, 0.10);
+  --shadow-xl: 0 8px 32px rgba(25, 28, 29, 0.14);
+
+  /* ─── Animations ─── */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.3s ease-out;
+  --animate-slide-right: slide-right 0.3s ease-out;
+}
+
+/* ─── Keyframes ─── */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-right {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ─── Base Styles ─── */
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-foreground);
+}
+
+/* ─── Focus Visible ─── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
