@@ -7,22 +7,23 @@ import { Loader2 } from "lucide-react";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-  const [isHydrated, setIsHydrated] = useState(false);
+  const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const [initialized, setInitialized] = useState(false);
 
-  // Wait for Zustand persist hydration
+  // Initialize auth on mount — check Supabase session
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    initialize().then(() => setInitialized(true));
+  }, [initialize]);
 
+  // Redirect if not authenticated after initialization
   useEffect(() => {
-    if (isHydrated && !isAuthenticated) {
+    if (initialized && !isLoading && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [isHydrated, isAuthenticated, router]);
+  }, [initialized, isLoading, isAuthenticated, router]);
 
-  // Show loading while hydrating
-  if (!isHydrated) {
+  // Show loading while checking session
+  if (!initialized || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">

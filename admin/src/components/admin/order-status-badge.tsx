@@ -1,11 +1,21 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { ORDER_STATUS_CONFIG } from "@shared/constants";
 
 interface OrderStatusBadgeProps {
   status: string;
   className?: string;
 }
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Menunggu Konfirmasi",
+  CONFIRMED: "Dikonfirmasi",
+  PROCESSING: "Sedang Diproses",
+  READY: "Siap",
+  SHIPPING: "Sedang Dikirim",
+  DELIVERED: "Terkirim",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
+};
 
 const statusStyles: Record<string, string> = {
   PENDING: "bg-warning/10 text-warning border-warning/20",
@@ -19,8 +29,7 @@ const statusStyles: Record<string, string> = {
 };
 
 export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
-  const config = ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG];
-  const label = config?.label || status;
+  const label = STATUS_LABELS[status] || status;
   const style = statusStyles[status] || "bg-muted text-muted-foreground border-border";
 
   return (

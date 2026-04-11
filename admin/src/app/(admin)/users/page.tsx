@@ -1,12 +1,22 @@
 "use client";
 
-import { Shield, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Shield, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MOCK_USERS } from "@shared/mock-data";
+import { createClient } from "@/lib/supabase/client";
+
+interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  is_active: boolean;
+}
 
 const ROLE_COLORS: Record<string, string> = {
   OWNER: "bg-primary/10 text-primary border-primary/20",
@@ -15,6 +25,31 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function UsersPage() {
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("users")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      setUsers(data || []);
+      setLoading(false);
+    }
+    fetchUsers();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -24,7 +59,7 @@ export default function UsersPage() {
 
       <div className="grid sm:grid-cols-3 gap-4">
         {["OWNER", "STAFF", "KASIR"].map((role) => (
-          <Card key={role}><CardContent className="pt-6 text-center"><Shield className="h-8 w-8 mx-auto text-primary mb-2" /><p className="text-2xl font-bold">{MOCK_USERS.filter((u) => u.role === role).length}</p><p className="text-sm text-muted-foreground">{role}</p></CardContent></Card>
+          <Card key={role}><CardContent className="pt-6 text-center"><Shield className="h-8 w-8 mx-auto text-primary mb-2" /><p className="text-2xl font-bold">{users.filter((u) => u.role === role).length}</p><p className="text-sm text-muted-foreground">{role}</p></CardContent></Card>
         ))}
       </div>
 
@@ -34,17 +69,17 @@ export default function UsersPage() {
           <Table>
             <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Email</TableHead><TableHead>Role</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>
-              {MOCK_USERS.map((u) => (
+              {users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8"><AvatarFallback className="text-xs bg-primary/10 text-primary">{u.name.charAt(0)}</AvatarFallback></Avatar>
-                      <div><p className="text-sm font-medium">{u.name}</p><p className="text-xs text-muted-foreground">{u.phone}</p></div>
+                      <div><p className="text-sm font-medium">{u.name}</p><p className="text-xs text-muted-foreground">{u.phone || "—"}</p></div>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell><Badge variant="outline" className={ROLE_COLORS[u.role] || ""}>{u.role}</Badge></TableCell>
-                  <TableCell><Badge variant="outline" className={u.isActive ? "text-success border-success/20" : "text-muted-foreground"}>{u.isActive ? "Aktif" : "Nonaktif"}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className={u.is_active ? "text-success border-success/20" : "text-muted-foreground"}>{u.is_active ? "Aktif" : "Nonaktif"}</Badge></TableCell>
                 </TableRow>
               ))}
             </TableBody>

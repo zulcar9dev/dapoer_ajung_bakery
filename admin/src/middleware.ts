@@ -1,15 +1,11 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Client-side auth uses Zustand persist (localStorage).
-// This middleware provides a lightweight server-side redirect
-// for the first page load by checking a simple cookie.
-// The real auth check happens client-side via AuthGuard.
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow static files), API routes, and auth pages
+  // Allow static files, API routes, and auth pages
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/_next") ||
@@ -20,20 +16,61 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // For all other admin routes, the AuthGuard component handles
-  // the redirect client-side after Zustand hydration.
-  // This middleware is a placeholder for future server-side auth (e.g., Better Auth).
-  return NextResponse.next();
+  // Create response to pass through
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  // Create Supabase client for middleware (session refresh)
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          // Set cookies on the request (for server components downstream)
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          // Set cookies on the response (for the browser)
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // Refresh session — this is critical for keeping auth alive
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // If no session and trying to access protected routes, redirect to login
+  if (!user && !pathname.startsWith("/login")) {
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // If logged in and trying to access login page, redirect to dashboard
+  if (user && pathname.startsWith("/login")) {
+    const dashboardUrl = new URL("/", request.url);
+    return NextResponse.redirect(dashboardUrl);
+  }
+
+  return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico, sitemap.xml, robots.txt
-     */
     "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };

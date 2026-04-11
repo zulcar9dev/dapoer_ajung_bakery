@@ -21,8 +21,8 @@ export function Topbar() {
   const { toggleMobileSidebar } = useUIStore();
   const { user, logout } = useAuthStore();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 

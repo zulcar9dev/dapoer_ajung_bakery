@@ -21,7 +21,8 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/use-ui-store";
 import { useAuthStore } from "@/stores/use-auth-store";
-import type { UserRole } from "@shared/types";
+
+type UserRole = "OWNER" | "STAFF" | "KASIR";
 
 const MENU_ITEMS: {
   group: string;
@@ -66,8 +67,8 @@ export function Sidebar() {
   const { user, logout } = useAuthStore();
   const userRole = user?.role || "KASIR";
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push("/login");
   };
 

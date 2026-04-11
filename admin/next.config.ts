@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
       "@shared/utils": path.join(sharedDir, "utils.ts"),
       "@shared/validators": path.join(sharedDir, "validators.ts"),
       "@shared/mock-data": path.join(sharedDir, "mock-data.ts"),
+      "@shared/lib/supabase/client": path.join(sharedDir, "lib/supabase/client.ts"),
+      "@shared/lib/supabase/server": path.join(sharedDir, "lib/supabase/server.ts"),
+      "@shared/lib/supabase/middleware": path.join(sharedDir, "lib/supabase/middleware.ts"),
     };
     return config;
   },
@@ -28,6 +31,9 @@ const nextConfig: NextConfig = {
       "@shared/utils": `${sharedDirPosix}/utils.ts`,
       "@shared/validators": `${sharedDirPosix}/validators.ts`,
       "@shared/mock-data": `${sharedDirPosix}/mock-data.ts`,
+      "@shared/lib/supabase/client": `${sharedDirPosix}/lib/supabase/client.ts`,
+      "@shared/lib/supabase/server": `${sharedDirPosix}/lib/supabase/server.ts`,
+      "@shared/lib/supabase/middleware": `${sharedDirPosix}/lib/supabase/middleware.ts`,
     },
   },
 
