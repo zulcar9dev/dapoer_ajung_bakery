@@ -6,6 +6,7 @@ export { CategoryCard } from "./category-card";
 export { HeroCarousel } from "./hero-carousel";
 export { CartSheet } from "./cart-sheet";
 export { WhatsAppFAB } from "./whatsapp-fab";
+export { LiveChatWidget } from "./live-chat-widget";
 export { TestimonialSection } from "./testimonial-section";
 export { Breadcrumb } from "./breadcrumb";
 export { SearchDialog } from "./search-dialog";

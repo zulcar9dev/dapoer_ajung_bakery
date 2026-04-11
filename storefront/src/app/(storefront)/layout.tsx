@@ -1,6 +1,6 @@
 import { Header } from "@/components/storefront/header";
 import { Footer } from "@/components/storefront/footer";
-import { WhatsAppFAB } from "@/components/storefront/whatsapp-fab";
+import { LiveChatWidget } from "@/components/storefront/live-chat-widget";
 import { CartSheet } from "@/components/storefront/cart-sheet";
 
 export default function StorefrontLayout({
@@ -14,7 +14,7 @@ export default function StorefrontLayout({
       <main className="flex-1">{children}</main>
       <Footer />
       <CartSheet />
-      <WhatsAppFAB />
+      <LiveChatWidget />
     </div>
   );
 }
