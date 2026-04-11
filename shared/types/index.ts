@@ -70,11 +70,14 @@ export interface Product {
 // ─── Cart ───
 
 export interface CartItem {
+  id: string;              // productId or productId-variantId
   productId: string;
-  product: Product;
+  productName: string;
+  productImage: string;
   variantId?: string;
-  variant?: ProductVariant;
+  variantName?: string;
   quantity: number;
+  unitPrice: number;
   note?: string;
 }
 

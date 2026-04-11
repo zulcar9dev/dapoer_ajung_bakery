@@ -1,0 +1,11 @@
+// Barrel export for storefront components
+export { Header } from "./header";
+export { Footer } from "./footer";
+export { ProductCard } from "./product-card";
+export { CategoryCard } from "./category-card";
+export { HeroCarousel } from "./hero-carousel";
+export { CartSheet } from "./cart-sheet";
+export { WhatsAppFAB } from "./whatsapp-fab";
+export { TestimonialSection } from "./testimonial-section";
+export { Breadcrumb } from "./breadcrumb";
+export { SearchDialog } from "./search-dialog";

@@ -1,2 +1,6 @@
-// Re-export cn from shared utils for shadcn/ui compatibility
-export { cn } from "@shared/utils";
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
