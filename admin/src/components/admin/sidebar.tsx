@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -20,8 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/use-ui-store";
+import { useAuthStore } from "@/stores/use-auth-store";
+import type { UserRole } from "@shared/types";
 
-const MENU_ITEMS = [
+const MENU_ITEMS: {
+  group: string;
+  items: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; roles?: UserRole[] }[];
+}[] = [
   {
     group: "Utama",
     items: [
@@ -34,8 +39,8 @@ const MENU_ITEMS = [
   {
     group: "Pemasaran",
     items: [
-      { label: "Promo", href: "/promos", icon: Ticket },
-      { label: "Review", href: "/reviews", icon: Star },
+      { label: "Promo", href: "/promos", icon: Ticket, roles: ["OWNER", "STAFF"] },
+      { label: "Review", href: "/reviews", icon: Star, roles: ["OWNER", "STAFF"] },
     ],
   },
   {
@@ -47,16 +52,32 @@ const MENU_ITEMS = [
   {
     group: "Pengaturan",
     items: [
-      { label: "Laporan", href: "/reports", icon: BarChart3 },
-      { label: "Pengguna", href: "/users", icon: Users },
-      { label: "Pengaturan", href: "/settings", icon: Settings },
+      { label: "Laporan", href: "/reports", icon: BarChart3, roles: ["OWNER"] },
+      { label: "Pengguna", href: "/users", icon: Users, roles: ["OWNER"] },
+      { label: "Pengaturan", href: "/settings", icon: Settings, roles: ["OWNER", "STAFF"] },
     ],
   },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isSidebarCollapsed, toggleSidebar } = useUIStore();
+  const { user, logout } = useAuthStore();
+  const userRole = user?.role || "KASIR";
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+
+  // Filter menu items by role
+  const filteredMenu = MENU_ITEMS.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (item) => !item.roles || item.roles.includes(userRole)
+    ),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <aside
@@ -86,7 +107,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
-        {MENU_ITEMS.map((group) => (
+        {filteredMenu.map((group) => (
           <div key={group.group}>
             {!isSidebarCollapsed && (
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-3 mb-2">
@@ -156,6 +177,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="sm"
+          onClick={handleLogout}
           className={cn(
             "w-full text-destructive hover:text-destructive hover:bg-destructive/10",
             isSidebarCollapsed ? "justify-center px-0" : "justify-start"

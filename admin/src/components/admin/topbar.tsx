@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bell, Menu, LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,11 +13,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CURRENT_USER } from "@shared/mock-data";
+import { useAuthStore } from "@/stores/use-auth-store";
 import { useUIStore } from "@/stores/use-ui-store";
 
 export function Topbar() {
+  const router = useRouter();
   const { toggleMobileSidebar } = useUIStore();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   return (
     <header className="sticky top-0 z-40 h-16 bg-card/95 backdrop-blur-md border-b border-border flex items-center px-4 lg:px-6 gap-4">
@@ -33,7 +41,6 @@ export function Topbar() {
 
       {/* Spacer */}
       <div className="flex-1" />
-
 
       <div className="flex items-center gap-2 ml-auto">
         {/* Notifications */}
@@ -54,25 +61,32 @@ export function Topbar() {
           <DropdownMenuTrigger className="flex items-center gap-2 px-2 h-9 rounded-md hover:bg-muted transition-colors cursor-pointer outline-none">
             <Avatar className="h-7 w-7">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
-                {CURRENT_USER.name.charAt(0)}
+                {user?.name?.charAt(0) || "?"}
               </AvatarFallback>
             </Avatar>
             <div className="hidden md:block text-left">
               <p className="text-xs font-medium text-foreground leading-tight">
-                {CURRENT_USER.name}
+                {user?.name || "User"}
               </p>
               <p className="text-[10px] text-muted-foreground">
-                {CURRENT_USER.role}
+                {user?.role || "—"}
               </p>
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profil</DropdownMenuItem>
-            <DropdownMenuItem>Pengaturan</DropdownMenuItem>
+            <DropdownMenuItem>
+              <User className="h-4 w-4 mr-2" />
+              Profil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
+              <Settings className="h-4 w-4 mr-2" />
+              Pengaturan
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
               Keluar
             </DropdownMenuItem>
           </DropdownMenuContent>
