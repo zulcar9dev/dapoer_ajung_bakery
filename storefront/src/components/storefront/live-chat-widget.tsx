@@ -76,7 +76,7 @@ export function LiveChatWidget() {
         <div className="flex items-center gap-2 bg-[#3A3A2E] text-white py-3 px-2 rounded-l-lg shadow-xl hover:shadow-2xl hover:pr-3 transition-all duration-300 cursor-pointer writing-vertical">
           <MessageCircle className="w-4 h-4 shrink-0" />
           <span className="text-xs font-semibold tracking-wide whitespace-nowrap">
-            Chat with us
+            Hubungi Kami
           </span>
           {unreadCount > 0 && (
             <span className="w-4 h-4 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center shrink-0">

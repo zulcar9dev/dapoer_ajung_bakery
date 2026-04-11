@@ -150,6 +150,11 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
 }
 
+[role="dialog"]:focus-visible,
+[data-radix-focus-guard]:focus-visible {
+  outline: none;
+}
+
 /* ─── Vertical writing mode for Chat tab ─── */
 .writing-vertical {
   writing-mode: vertical-rl;

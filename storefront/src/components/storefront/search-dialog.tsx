@@ -34,7 +34,7 @@ export function SearchDialog() {
 
   return (
     <Dialog open={isSearchOpen} onOpenChange={setSearchOpen}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0 bg-surface">
+      <DialogContent className="sm:max-w-lg p-0 gap-0 bg-surface outline-none">
         <DialogTitle className="sr-only">Cari Produk</DialogTitle>
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 border-b border-border">

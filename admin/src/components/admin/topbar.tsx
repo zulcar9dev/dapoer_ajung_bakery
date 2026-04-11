@@ -1,8 +1,7 @@
 "use client";
 
-import { Bell, Search, Menu } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -32,18 +31,11 @@ export function Topbar() {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Search */}
-      <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari pesanan, produk..."
-            className="pl-9 bg-muted border-0 focus-visible:ring-1 focus-visible:ring-primary h-9"
-          />
-        </div>
-      </div>
+      {/* Spacer */}
+      <div className="flex-1" />
 
-      <div className="flex items-center gap-2">
+
+      <div className="flex items-center gap-2 ml-auto">
         {/* Notifications */}
         <Button
           variant="ghost"
