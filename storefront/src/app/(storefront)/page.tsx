@@ -8,21 +8,26 @@ import { HeroCarousel } from "@/components/storefront/hero-carousel";
 import { ProductCard } from "@/components/storefront/product-card";
 import { CategoryCard } from "@/components/storefront/category-card";
 import { TestimonialSection } from "@/components/storefront/testimonial-section";
+import { LocalBusinessJsonLd } from "@/components/storefront/json-ld";
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { MOCK_PRODUCTS, MOCK_BANNERS, MOCK_TESTIMONIALS } from "@shared/mock-data";
 import { CATEGORIES, STORE_INFO } from "@shared/constants";
 
 const bestSellers = MOCK_PRODUCTS.filter((p) => p.isFeatured).slice(0, 8);
 
 export default function HomePage() {
+  const revealRef = useScrollReveal();
+
   return (
-    <>
+    <div ref={revealRef}>
+      <LocalBusinessJsonLd />
       {/* ── Hero Carousel ── */}
       <section>
         <HeroCarousel banners={MOCK_BANNERS} />
       </section>
 
       {/* ── Kategori Produk ── */}
-      <section className="py-16 bg-background">
+      <section className="py-16 bg-background reveal">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground mb-3">
@@ -41,7 +46,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Best Seller ── */}
-      <section className="py-16 bg-surface">
+      <section className="py-16 bg-surface reveal">
         <div className="container mx-auto px-4">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -80,7 +85,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Tentang Kami Teaser ── */}
-      <section className="py-16 bg-background-alt">
+      <section className="py-16 bg-background-alt reveal">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-10 items-center">
             <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-surface-dim">
@@ -146,6 +151,6 @@ export default function HomePage() {
 
       {/* ── Testimonial ── */}
       <TestimonialSection testimonials={MOCK_TESTIMONIALS} />
-    </>
+    </div>
   );
 }
