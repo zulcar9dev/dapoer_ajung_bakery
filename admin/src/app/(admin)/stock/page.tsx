@@ -1,18 +1,59 @@
 "use client";
 
-import { Package, AlertTriangle, ArrowUpDown } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Package, AlertTriangle, ArrowUpDown, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { MOCK_PRODUCTS, MOCK_STOCK_MOVEMENTS } from "@shared/mock-data";
-import { formatRupiah, formatDateTime } from "@shared/utils";
-
-const stockSummary = MOCK_PRODUCTS.map((p) => ({
-  id: p.id, name: p.name, category: p.category.name, totalStock: p.totalStock,
-  variants: p.variants.map((v) => ({ name: v.name, stock: v.stock, sku: v.sku })),
-})).sort((a, b) => a.totalStock - b.totalStock);
+import { formatDateTime } from "@shared/utils";
+import { createClient } from "@/lib/supabase/client";
 
 export default function StockPage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [movements, setMovements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient();
+      
+      const { data: prodData } = await supabase
+        .from("products")
+        .select(`
+          id, name, total_stock,
+          category:categories(name),
+          variants:product_variants(name, stock, sku)
+        `);
+
+      const { data: movData } = await supabase
+        .from("stock_movements")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      setProducts(prodData || []);
+      setMovements(movData || []);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const stockSummary = products.map((p) => ({
+    id: p.id, 
+    name: p.name, 
+    category: p.category?.[0]?.name || p.category?.name || "Kategori", 
+    totalStock: p.total_stock || 0,
+    variants: p.variants || [],
+  })).sort((a, b) => a.totalStock - b.totalStock);
+
   return (
     <div className="space-y-6">
       <div><h1 className="text-2xl font-bold">Manajemen Stok</h1><p className="text-sm text-muted-foreground">Pantau dan kelola stok produk.</p></div>
@@ -35,7 +76,7 @@ export default function StockPage() {
                 <TableRow key={p.id}>
                   <TableCell className="font-medium text-sm">{p.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{p.category}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{p.variants.map((v) => `${v.name}: ${v.stock}`).join(", ") || "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{p.variants.map((v: any) => `${v.name}: ${v.stock}`).join(", ") || "—"}</TableCell>
                   <TableCell className="text-right"><Badge variant="outline" className={p.totalStock <= 5 ? "border-destructive text-destructive" : p.totalStock <= 15 ? "border-warning text-warning" : ""}>{p.totalStock}</Badge></TableCell>
                 </TableRow>
               ))}
@@ -51,13 +92,13 @@ export default function StockPage() {
           <Table>
             <TableHeader><TableRow><TableHead>Waktu</TableHead><TableHead>Produk</TableHead><TableHead>Tipe</TableHead><TableHead>Jumlah</TableHead><TableHead>Keterangan</TableHead></TableRow></TableHeader>
             <TableBody>
-              {MOCK_STOCK_MOVEMENTS.slice(0, 10).map((m) => (
+              {movements.map((m) => (
                 <TableRow key={m.id}>
-                  <TableCell className="text-xs text-muted-foreground">{formatDateTime(m.createdAt)}</TableCell>
-                  <TableCell className="text-sm font-medium">{m.productName}</TableCell>
-                  <TableCell><Badge variant="outline" className={m.type === "IN" ? "text-success border-success/20" : "text-destructive border-destructive/20"}>{m.type === "IN" ? "Masuk" : "Keluar"}</Badge></TableCell>
-                  <TableCell className="text-sm font-medium">{m.type === "IN" ? "+" : "-"}{m.quantity}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{m.reason}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{formatDateTime(m.created_at)}</TableCell>
+                  <TableCell className="text-sm font-medium">{m.product_name} {m.variant_name ? `(${m.variant_name})` : ""}</TableCell>
+                  <TableCell><Badge variant="outline" className={m.type === "IN" ? "text-success border-success/20" : m.type === "OUT" ? "text-destructive border-destructive/20" : "text-warning border-warning/20"}>{m.type === "IN" ? "Masuk" : m.type === "OUT" ? "Keluar" : "Koreksi"}</Badge></TableCell>
+                  <TableCell className="text-sm font-medium">{m.type === "IN" ? "+" : "-"}{Math.abs(m.quantity)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{m.reason || "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

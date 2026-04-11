@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Eye } from "lucide-react";
+import { Search, Eye, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,25 +13,52 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
-import { MOCK_ORDERS } from "@shared/mock-data";
 import { formatRupiah, formatDateTime } from "@shared/utils";
+import { createClient } from "@/lib/supabase/client";
 import type { OrderStatus } from "@shared/types";
 
 const ALL_STATUSES: OrderStatus[] = ["PENDING","CONFIRMED","PROCESSING","READY","SHIPPING","DELIVERED","COMPLETED","CANCELLED"];
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  useEffect(() => {
+    async function fetchOrders() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          items:order_items(id)
+        `)
+        .order("created_at", { ascending: false });
+
+      setOrders(data || []);
+      setLoading(false);
+    }
+    fetchOrders();
+  }, []);
+
   const filtered = useMemo(() => {
-    let r = [...MOCK_ORDERS];
+    let r = [...orders];
     if (search.trim()) {
       const q = search.toLowerCase();
-      r = r.filter((o) => o.orderNumber.toLowerCase().includes(q) || o.customerName.toLowerCase().includes(q));
+      r = r.filter((o) => (o.order_number?.toLowerCase().includes(q) || o.customer_name?.toLowerCase().includes(q)));
     }
     if (statusFilter !== "all") r = r.filter((o) => o.status === statusFilter);
     return r;
-  }, [search, statusFilter]);
+  }, [search, statusFilter, orders]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -72,12 +99,12 @@ export default function OrdersPage() {
             <TableBody>
               {filtered.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium text-sm">{order.orderNumber}</TableCell>
-                  <TableCell className="text-sm">{order.customerName}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{order.items.length} item</TableCell>
+                  <TableCell className="font-medium text-sm">{order.order_number}</TableCell>
+                  <TableCell className="text-sm">{order.customer_name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{order.items?.length || 0} item</TableCell>
                   <TableCell className="text-sm font-medium">{formatRupiah(order.total)}</TableCell>
                   <TableCell><OrderStatusBadge status={order.status} /></TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{formatDateTime(order.createdAt)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{formatDateTime(order.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" className="h-8 w-8" render={<Link href={`/orders/${order.id}`} />}>
                       <Eye className="h-4 w-4" />
