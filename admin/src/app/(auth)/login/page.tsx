@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +23,10 @@ export default function LoginPage() {
 
     if (!email || !password) return;
 
+    setIsSubmitting(true);
     const success = await login(email, password);
+    setIsSubmitting(false);
+    
     if (success) {
       router.push("/");
     }
@@ -80,7 +84,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="h-11"
             />
           </div>
@@ -98,7 +102,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
                 className="h-11 pr-11"
               />
               <button
@@ -120,9 +124,9 @@ export default function LoginPage() {
           <Button
             type="submit"
             className="w-full h-11 text-sm font-semibold"
-            disabled={isLoading || !email || !password}
+            disabled={isSubmitting || !email || !password}
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 Memproses...
