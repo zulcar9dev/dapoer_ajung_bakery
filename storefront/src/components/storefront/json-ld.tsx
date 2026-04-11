@@ -9,7 +9,7 @@ export function LocalBusinessJsonLd() {
     description:
       "Kue tradisional khas Gorontalo sejak 1990. Bingka Kentang, Nastar, Kastengel, Lapis Legit, Hampers, dan Bekal Sekolah.",
     url: "https://dapoerajung.co.id",
-    telephone: STORE_INFO.whatsappNumber,
+    telephone: STORE_INFO.phone,
     address: {
       "@type": "PostalAddress",
       streetAddress: STORE_INFO.address,
@@ -40,7 +40,7 @@ export function LocalBusinessJsonLd() {
     priceRange: "Rp 12.000 - Rp 450.000",
     servesCuisine: "Indonesian Bakery",
     image: "/images/logo.jpg",
-    sameAs: [STORE_INFO.instagramUrl],
+    sameAs: [STORE_INFO.socialMedia.instagram],
   };
 
   return (

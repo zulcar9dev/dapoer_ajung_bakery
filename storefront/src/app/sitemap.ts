@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { MOCK_PRODUCTS } from "@shared/mock-data";
-import { MOCK_CATEGORIES } from "@shared/mock-data";
 
 const BASE_URL = "https://dapoerajung.co.id";
 
