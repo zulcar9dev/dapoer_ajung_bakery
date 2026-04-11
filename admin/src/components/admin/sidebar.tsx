@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   ShoppingBag,
   Package,
-  Tags,
   MessageSquare,
   BarChart3,
   Settings,
@@ -26,32 +25,31 @@ const MENU_ITEMS = [
   {
     group: "Utama",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Pesanan", href: "/dashboard/orders", icon: ShoppingBag },
-      { label: "Produk", href: "/dashboard/products", icon: Package },
-      { label: "Kategori", href: "/dashboard/categories", icon: Tags },
-      { label: "Stok", href: "/dashboard/stock", icon: Warehouse },
+      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Pesanan", href: "/orders", icon: ShoppingBag },
+      { label: "Produk", href: "/products", icon: Package },
+      { label: "Stok", href: "/stock", icon: Warehouse },
     ],
   },
   {
     group: "Pemasaran",
     items: [
-      { label: "Voucher", href: "/dashboard/vouchers", icon: Ticket },
-      { label: "Review", href: "/dashboard/reviews", icon: Star },
+      { label: "Promo", href: "/promos", icon: Ticket },
+      { label: "Review", href: "/reviews", icon: Star },
     ],
   },
   {
     group: "Komunikasi",
     items: [
-      { label: "Chat", href: "/dashboard/chat", icon: MessageSquare },
+      { label: "Chat", href: "/chat", icon: MessageSquare },
     ],
   },
   {
     group: "Pengaturan",
     items: [
-      { label: "Laporan", href: "/dashboard/reports", icon: BarChart3 },
-      { label: "Pengguna", href: "/dashboard/users", icon: Users },
-      { label: "Pengaturan", href: "/dashboard/settings", icon: Settings },
+      { label: "Laporan", href: "/reports", icon: BarChart3 },
+      { label: "Pengguna", href: "/users", icon: Users },
+      { label: "Pengaturan", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -69,7 +67,7 @@ export function Sidebar() {
     >
       {/* Header */}
       <div className="flex items-center h-16 px-4 border-b border-border">
-        <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
+        <Link href="/" className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
             DA
           </div>
@@ -98,7 +96,7 @@ export function Sidebar() {
                 const Icon = item.icon;
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/dashboard" &&
+                  (item.href !== "/" &&
                     pathname.startsWith(item.href));
 
                 return (
