@@ -19,9 +19,11 @@ export function Header() {
         <div className="flex h-16 md:h-20 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-heading font-bold text-lg md:text-xl shadow-sm group-hover:shadow-md transition-shadow">
-              DA
-            </div>
+            <img
+              src="/images/logo.jpg"
+              alt="Dapoer Ajung"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover shadow-sm group-hover:shadow-md transition-shadow"
+            />
             <div className="hidden sm:block">
               <h1 className="font-heading text-lg md:text-xl font-bold text-foreground leading-tight">
                 {STORE_INFO.storeName.split(" — ")[0] || STORE_INFO.storeName}

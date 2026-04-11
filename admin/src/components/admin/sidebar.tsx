@@ -68,9 +68,11 @@ export function Sidebar() {
       {/* Header */}
       <div className="flex items-center h-16 px-4 border-b border-border">
         <Link href="/" className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-            DA
-          </div>
+          <img
+            src="/images/logo.jpg"
+            alt="Dapoer Ajung"
+            className="w-9 h-9 rounded-full object-cover shrink-0"
+          />
           {!isSidebarCollapsed && (
             <div className="min-w-0">
               <h2 className="font-heading text-sm font-bold text-foreground leading-tight truncate">

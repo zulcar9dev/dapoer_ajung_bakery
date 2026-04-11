@@ -151,6 +151,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [role="dialog"]:focus-visible,
+[role="dialog"] *:focus-visible,
 [data-radix-focus-guard]:focus-visible {
   outline: none;
 }
