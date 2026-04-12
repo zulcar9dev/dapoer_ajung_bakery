@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Bell, Menu, LogOut, ShoppingCart,
-  AlertTriangle, AlertOctagon, Star, MessageSquare, CheckCheck,
+  AlertTriangle, AlertOctagon, Star, MessageSquare, CheckCheck, Trash2,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,7 @@ export function Topbar() {
     fetchNotifications,
     markAsRead,
     markAllAsRead,
+    deleteAllRead,
     subscribeRealtime,
     unsubscribeRealtime,
   } = useNotificationStore();
@@ -182,6 +183,27 @@ export function Topbar() {
                 ))
               )}
             </div>
+            
+            {/* Footer Actions */}
+            {notifications.length > 0 && notifications.some(n => n.is_read) && (
+              <>
+                <Separator />
+                <div className="p-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 justify-center"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      deleteAllRead();
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    Hapus History
+                  </Button>
+                </div>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 

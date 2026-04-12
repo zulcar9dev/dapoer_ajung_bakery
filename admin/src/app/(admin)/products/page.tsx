@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CATEGORIES } from "@shared/constants";
 import { formatRupiah } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
+import { ProductFormModal } from "@/components/admin/product-form-modal";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
@@ -24,27 +24,33 @@ export default function ProductsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteName, setDeleteName] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    const supabase = createClient();
+    
+    const [productsRes, categoriesRes] = await Promise.all([
+      supabase
+        .from("products")
+        .select(`
+          *,
+          category:categories(name),
+          images:product_images(url)
+        `)
+        .order("created_at", { ascending: false }),
+      supabase.from("categories").select("id, name").order("name")
+    ]);
+
+    setProducts(productsRes.data || []);
+    setCategories(categoriesRes.data || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function fetchProducts() {
-      const supabase = createClient();
-      
-      const [productsRes, categoriesRes] = await Promise.all([
-        supabase
-          .from("products")
-          .select(`
-            *,
-            category:categories(name),
-            images:product_images(url)
-          `)
-          .order("created_at", { ascending: false }),
-        supabase.from("categories").select("id, name").order("name")
-      ]);
-
-      setProducts(productsRes.data || []);
-      setCategories(categoriesRes.data || []);
-      setLoading(false);
-    }
     fetchProducts();
   }, []);
 
@@ -96,7 +102,9 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-bold">Produk</h1><p className="text-sm text-muted-foreground">Kelola katalog produk.</p></div>
-        <Button className="bg-primary text-primary-foreground" render={<Link href="/products/new" />}><Plus className="h-4 w-4 mr-1" />Tambah Produk</Button>
+        <Button className="bg-primary text-primary-foreground" onClick={() => { setSelectedProduct(null); setIsModalOpen(true); }}>
+          <Plus className="h-4 w-4 mr-1" /> Tambah Produk
+        </Button>
       </div>
       <Card>
         <CardHeader className="pb-4">
@@ -137,7 +145,7 @@ export default function ProductsPage() {
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => confirmDelete(p.id, p.name)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" render={<Link href={`/products/${p.id}`} />}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedProduct(p); setIsModalOpen(true); }}>
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -171,6 +179,14 @@ export default function ProductsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Modal Form Produk (Tambah & Edit) */}
+      <ProductFormModal 
+        open={isModalOpen} 
+        onOpenChange={setIsModalOpen} 
+        product={selectedProduct} 
+        onSuccess={fetchProducts} 
+      />
     </div>
   );
 }

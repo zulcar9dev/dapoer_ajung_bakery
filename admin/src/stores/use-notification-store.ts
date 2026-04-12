@@ -22,6 +22,7 @@ interface NotificationState {
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteAllRead: () => Promise<void>;
   subscribeRealtime: () => void;
   unsubscribeRealtime: () => void;
 }
@@ -77,6 +78,23 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
     set((state) => ({
       notifications: state.notifications.map((n) => ({ ...n, is_read: true })),
       unreadCount: 0,
+    }));
+  },
+
+  deleteAllRead: async () => {
+    // Collect IDs of read notifications
+    const readIds = get()
+      .notifications.filter((n) => n.is_read)
+      .map((n) => n.id);
+
+    if (readIds.length === 0) return;
+
+    // Delete from Supabase
+    await supabase.from("notifications").delete().in("id", readIds);
+
+    // Update local state by removing deleted notifications
+    set((state) => ({
+      notifications: state.notifications.filter((n) => !n.is_read),
     }));
   },
 

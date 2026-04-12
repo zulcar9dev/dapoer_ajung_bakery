@@ -22,10 +22,13 @@ export default function EditProductPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [variants, setVariants] = useState<any[]>([]);
-  const [newVariant, setNewVariant] = useState({ name: "", type: "SIZE", price: "", stock: "", sku: "" });
+  const [newVariant, setNewVariant] = useState({ name: "", type: "SIZE", price: "", sku: "" });
   const [isSavingVariant, setIsSavingVariant] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [isPreorder, setIsPreorder] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
 
   useEffect(() => {
     async function fetchProduct() {
@@ -42,6 +45,9 @@ export default function EditProductPage() {
       if (productRes.data?.category_id) {
         setSelectedCategory(productRes.data.category_id);
       }
+      setIsPreorder(!!productRes.data?.is_pre_order_only);
+      setIsFeatured(!!productRes.data?.is_featured);
+      
       if (categoriesRes.data) setCategories(categoriesRes.data);
       if (variantsRes.data) setVariants(variantsRes.data);
       
@@ -59,7 +65,6 @@ export default function EditProductPage() {
     
     const form = e.currentTarget;
     const getValue = (id: string) => (form.querySelector(`#${id}`) as HTMLInputElement | HTMLTextAreaElement)?.value || null;
-    const isChecked = (id: string) => form.querySelector(`button#${id}`)?.getAttribute('data-state') === 'checked';
 
     const basePrice = getValue("basePrice");
     const discountPrice = getValue("discountPrice");
@@ -75,8 +80,8 @@ export default function EditProductPage() {
       weight: weight ? parseInt(weight) : null,
       shelf_life: getValue("shelfLife"),
       ingredients: getValue("ingredients"),
-      is_pre_order_only: isChecked("preorder"),
-      is_featured: isChecked("featured"),
+      is_pre_order_only: isPreorder,
+      is_featured: isFeatured,
     };
 
     const supabase = createClient();
@@ -103,14 +108,14 @@ export default function EditProductPage() {
       name: newVariant.name,
       type: newVariant.type,
       price: parseInt(newVariant.price),
-      stock: newVariant.stock ? parseInt(newVariant.stock) : 0,
+      stock: 0,
       sku: newVariant.sku || null
     }).select().single();
     
     setIsSavingVariant(false);
     if (error) return alert("Gagal menambah varian: " + error.message);
     setVariants([...variants, data]);
-    setNewVariant({ name: "", type: "SIZE", price: "", stock: "", sku: "" });
+    setNewVariant({ name: "", type: "SIZE", price: "", sku: "" });
   };
 
   const handleDeleteVariant = async (vid: string) => {
@@ -172,7 +177,7 @@ export default function EditProductPage() {
           <CardContent>
             <div className="rounded-md border mb-4">
               <Table>
-                <TableHeader><TableRow><TableHead>Nama Varian</TableHead><TableHead>Tipe</TableHead><TableHead>Harga</TableHead><TableHead>Stok</TableHead><TableHead>SKU</TableHead><TableHead className="w-[50px]"></TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Nama Varian</TableHead><TableHead>Tipe</TableHead><TableHead>Harga</TableHead><TableHead>SKU</TableHead><TableHead className="w-[50px]"></TableHead></TableRow></TableHeader>
                 <TableBody>
                   {variants.length === 0 ? (
                     <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4">Belum ada varian produk.</TableCell></TableRow>
@@ -180,9 +185,8 @@ export default function EditProductPage() {
                     variants.map((v) => (
                       <TableRow key={v.id}>
                         <TableCell className="font-medium">{v.name}</TableCell>
-                        <TableCell>{v.type}</TableCell>
+                        <TableCell>{v.type === "SIZE" ? "Ukuran" : v.type === "FLAVOR" ? "Rasa" : v.type}</TableCell>
                         <TableCell>Rp {v.price.toLocaleString("id-ID")}</TableCell>
-                        <TableCell>{v.stock}</TableCell>
                         <TableCell>{v.sku || "-"}</TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" type="button" className="h-8 w-8 text-destructive" onClick={() => handleDeleteVariant(v.id)}>
@@ -204,17 +208,13 @@ export default function EditProductPage() {
               <div className="space-y-1.5 w-[100px]">
                 <Label className="text-xs">Tipe</Label>
                 <Select value={newVariant.type} onValueChange={(v) => setNewVariant({ ...newVariant, type: v })}>
-                  <SelectTrigger><span className="truncate">{newVariant.type}</span></SelectTrigger>
-                  <SelectContent><SelectItem value="SIZE">SIZE</SelectItem><SelectItem value="FLAVOR">FLAVOR</SelectItem></SelectContent>
+                  <SelectTrigger><span className="truncate">{newVariant.type === "SIZE" ? "Ukuran" : newVariant.type === "FLAVOR" ? "Rasa" : newVariant.type}</span></SelectTrigger>
+                  <SelectContent><SelectItem value="SIZE">Ukuran</SelectItem><SelectItem value="FLAVOR">Rasa</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5 w-[120px]">
                 <Label className="text-xs">Harga (Rp)</Label>
                 <Input type="number" value={newVariant.price} onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })} />
-              </div>
-              <div className="space-y-1.5 w-[80px]">
-                <Label className="text-xs">Stok</Label>
-                <Input type="number" value={newVariant.stock} onChange={(e) => setNewVariant({ ...newVariant, stock: e.target.value })} />
               </div>
               <div className="space-y-1.5 w-[100px]">
                 <Label className="text-xs">SKU</Label>
@@ -234,8 +234,8 @@ export default function EditProductPage() {
               <div><Label htmlFor="shelfLife">Daya Tahan</Label><Input id="shelfLife" defaultValue={product.shelf_life || ""} className="mt-1.5" /></div>
               <div><Label htmlFor="ingredients">Bahan</Label><Input id="ingredients" defaultValue={product.ingredients || ""} className="mt-1.5" /></div>
             </div>
-            <div className="flex items-center gap-3"><Switch id="preorder" defaultChecked={product.is_pre_order_only} /><Label htmlFor="preorder">Pre-Order Only</Label></div>
-            <div className="flex items-center gap-3"><Switch id="featured" defaultChecked={product.is_featured} /><Label htmlFor="featured">Tampilkan di Best Seller</Label></div>
+            <div className="flex items-center gap-3"><Switch id="preorder" checked={isPreorder} onCheckedChange={setIsPreorder} /><Label htmlFor="preorder">Pre-Order Only</Label></div>
+            <div className="flex items-center gap-3"><Switch id="featured" checked={isFeatured} onCheckedChange={setIsFeatured} /><Label htmlFor="featured">Tampilkan di Best Seller</Label></div>
           </CardContent>
         </Card>
 
