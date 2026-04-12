@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -9,15 +10,11 @@ import {
   MessageSquare,
   BarChart3,
   Settings,
-  LogOut,
-  ChevronLeft,
   Ticket,
   Users,
   Star,
   Warehouse,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/use-ui-store";
 import { useAuthStore } from "@/stores/use-auth-store";
@@ -62,14 +59,32 @@ const MENU_ITEMS: {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { isSidebarCollapsed, toggleSidebar } = useUIStore();
-  const { user, logout } = useAuthStore();
+  const { isSidebarCollapsed, setSidebarCollapsed } = useUIStore();
+  const { user } = useAuthStore();
   const userRole = user?.role || "KASIR";
 
-  const handleLogout = async () => {
-    await logout();
-    router.push("/login");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Jalankan timer saat mount, jadi auto collapse 5 detik dari awal jika tidak di-hover
+    timerRef.current = setTimeout(() => {
+      setSidebarCollapsed(true);
+    }, 5000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [setSidebarCollapsed]);
+
+  const handleMouseEnter = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setSidebarCollapsed(false);
+  };
+
+  const handleMouseLeave = () => {
+    timerRef.current = setTimeout(() => {
+      setSidebarCollapsed(true);
+    }, 5000);
   };
 
   // Filter menu items by role
@@ -82,8 +97,10 @@ export function Sidebar() {
 
   return (
     <aside
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
-        "hidden lg:flex flex-col h-screen sticky top-0 bg-card border-r border-border transition-all duration-300",
+        "hidden lg:flex flex-col h-screen sticky top-0 bg-card border-r border-border transition-all duration-300 z-40",
         isSidebarCollapsed ? "w-[72px]" : "w-64"
       )}
     >
@@ -153,41 +170,6 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-
-      <Separator />
-
-      {/* Collapse toggle & Logout */}
-      <div className="p-3 space-y-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleSidebar}
-          className={cn(
-            "w-full text-muted-foreground hover:text-foreground",
-            isSidebarCollapsed ? "justify-center px-0" : "justify-start"
-          )}
-        >
-          <ChevronLeft
-            className={cn(
-              "h-4 w-4 transition-transform",
-              isSidebarCollapsed && "rotate-180"
-            )}
-          />
-          {!isSidebarCollapsed && <span className="ml-2">Tutup Sidebar</span>}
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className={cn(
-            "w-full text-destructive hover:text-destructive hover:bg-destructive/10",
-            isSidebarCollapsed ? "justify-center px-0" : "justify-start"
-          )}
-        >
-          <LogOut className="h-4 w-4" />
-          {!isSidebarCollapsed && <span className="ml-2">Keluar</span>}
-        </Button>
-      </div>
     </aside>
   );
 }

@@ -152,6 +152,25 @@ export default function StockPage() {
       await supabase.from("product_variants").update({ stock: newVarStock }).eq("id", variant.id);
     }
 
+    // 4. Kirim notifikasi jika stok menipis atau habis
+    if (newTotalStock === 0) {
+      await supabase.from("notifications").insert({
+        type: "OUT_OF_STOCK",
+        title: `Stok Habis: ${product?.name || "Produk"}`,
+        message: `Stok telah habis (0 unit)${variant ? ` — varian ${variant.name}` : ""}`,
+        reference_id: selectedProduct,
+        reference_url: "/stock",
+      });
+    } else if (newTotalStock > 0 && newTotalStock <= 5) {
+      await supabase.from("notifications").insert({
+        type: "LOW_STOCK",
+        title: `Stok Menipis: ${product?.name || "Produk"}`,
+        message: `Sisa stok tinggal ${newTotalStock} unit${variant ? ` — varian ${variant.name}` : ""}`,
+        reference_id: selectedProduct,
+        reference_url: "/stock",
+      });
+    }
+
     await fetchData();
     setSubmitting(false);
     setDialogOpen(false);
