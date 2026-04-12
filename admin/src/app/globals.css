@@ -43,11 +43,11 @@
   --color-muted: #F3F4F5;
   --color-muted-foreground: #44493B;
 
-  --color-card: #FFFFFF;
-  --color-card-foreground: #191C1D;
-
   --color-popover: #FFFFFF;
   --color-popover-foreground: #191C1D;
+
+  --color-card: #FFFFFF;
+  --color-card-foreground: #191C1D;
 
   --color-border: #E1E3E4;
   --color-input: #E1E3E4;
@@ -147,5 +147,25 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
 }
 
+/* ─── Calendar (react-day-picker) ─── */
+[data-slot="calendar"] {
+  --rdp-accent-color: var(--color-primary);
+  --rdp-accent-background-color: var(--color-primary);
+  font-family: var(--font-body);
+}
 
+[data-slot="calendar"] .rdp-month_caption {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
 
+[data-slot="calendar"] .rdp-weekday {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+}
+
+[data-slot="calendar"] .rdp-chevron {
+  fill: var(--color-primary);
+}

@@ -16,13 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { formatRupiah, formatDate } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { DateTimePicker } from "@/components/admin/date-time-picker";
 
 export default function PromosPage() {
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -44,8 +43,8 @@ export default function PromosPage() {
     max_discount: "",
     usage_limit: "0",
     is_active: true,
-    start_date: "",
-    end_date: "",
+    start_date: undefined as Date | undefined,
+    end_date: undefined as Date | undefined,
   });
 
   const fetchVouchers = async () => {
@@ -74,8 +73,8 @@ export default function PromosPage() {
       max_discount: "",
       usage_limit: "0",
       is_active: true,
-      start_date: "",
-      end_date: "",
+      start_date: undefined,
+      end_date: undefined,
     });
     setEditingVoucher(null);
   };
@@ -97,8 +96,8 @@ export default function PromosPage() {
       max_discount: voucher.max_discount ? voucher.max_discount.toString() : "",
       usage_limit: voucher.usage_limit.toString(),
       is_active: voucher.is_active,
-      start_date: voucher.start_date ? new Date(voucher.start_date).toISOString().slice(0, 16) : "",
-      end_date: voucher.end_date ? new Date(voucher.end_date).toISOString().slice(0, 16) : "",
+      start_date: voucher.start_date ? new Date(voucher.start_date) : undefined,
+      end_date: voucher.end_date ? new Date(voucher.end_date) : undefined,
     });
     setIsDialogOpen(true);
   };
@@ -143,8 +142,8 @@ export default function PromosPage() {
       max_discount: formData.max_discount ? parseInt(formData.max_discount) : null,
       usage_limit: parseInt(formData.usage_limit),
       is_active: formData.is_active,
-      start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
-      end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
+      start_date: formData.start_date ? formData.start_date.toISOString() : null,
+      end_date: formData.end_date ? formData.end_date.toISOString() : null,
     };
 
     let error;
@@ -409,25 +408,19 @@ export default function PromosPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="start_date">Mulai Berlaku</Label>
+                  <Label>Mulai Berlaku</Label>
                   <DateTimePicker
-                    date={formData.start_date ? new Date(formData.start_date) : undefined}
-                    onChange={(date) => setFormData({
-                      ...formData, 
-                      start_date: date ? date.toISOString() : ""
-                    })}
-                    placeholder="Pilih Tanggal Mulai"
+                    value={formData.start_date}
+                    onChange={(date) => setFormData({...formData, start_date: date})}
+                    placeholder="Pilih tanggal mulai"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="end_date">Berakhir</Label>
+                  <Label>Berakhir</Label>
                   <DateTimePicker
-                    date={formData.end_date ? new Date(formData.end_date) : undefined}
-                    onChange={(date) => setFormData({
-                      ...formData, 
-                      end_date: date ? date.toISOString() : ""
-                    })}
-                    placeholder="Pilih Tanggal Berakhir"
+                    value={formData.end_date}
+                    onChange={(date) => setFormData({...formData, end_date: date})}
+                    placeholder="Pilih tanggal berakhir"
                   />
                 </div>
               </div>
