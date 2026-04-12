@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { formatDateTime } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { toast } from "sonner";
 
 export default function StockPage() {
   const { user } = useAuthStore();
@@ -78,8 +79,12 @@ export default function StockPage() {
     setIsDeleting(true);
     const supabase = createClient();
     const { error } = await supabase.from("stock_movements").delete().eq("id", deleteMovementId);
-    if (error) alert("Gagal menghapus riwayat: " + error.message);
-    else await fetchData();
+    if (error) {
+      toast.error("Gagal menghapus riwayat", { description: error.message });
+    } else {
+      await fetchData();
+      toast.success("Riwayat pergerakan stok berhasil dihapus");
+    }
     setIsDeleting(false);
     setDeleteMovementId(null);
   };
@@ -89,8 +94,12 @@ export default function StockPage() {
     setIsResetting(true);
     const supabase = createClient();
     const { error } = await supabase.from("stock_movements").delete().not("id", "is", null);
-    if (error) alert("Gagal mereset riwayat: " + error.message);
-    else await fetchData();
+    if (error) {
+      toast.error("Gagal mereset riwayat", { description: error.message });
+    } else {
+      await fetchData();
+      toast.success("Seluruh riwayat pergerakan stok telah dikosongkan");
+    }
     setIsResetting(false);
     setResetDialogOpen(false);
     setResetConfirmText("");
@@ -107,7 +116,8 @@ export default function StockPage() {
 
   const handleSubmitStock = async () => {
     if (!selectedProduct || !quantity || isNaN(parseInt(quantity))) {
-      return alert("Produk dan jumlah harus diisi dengan benar.");
+      toast.warning("Formulir Tidak Lengkap", { description: "Produk dan jumlah mutasi stok harus diisi dengan benar." });
+      return;
     }
     
     setSubmitting(true);
@@ -131,7 +141,8 @@ export default function StockPage() {
 
     if (moveError) {
       setSubmitting(false);
-      return alert("Gagal mencatat mutasi: " + moveError.message);
+      toast.error("Gagal mencatat mutasi", { description: moveError.message });
+      return;
     }
 
     // 2. Update Product Total Stock
@@ -174,6 +185,9 @@ export default function StockPage() {
     await fetchData();
     setSubmitting(false);
     setDialogOpen(false);
+    toast.success("Mutasi Stok Tersimpan", { 
+      description: `Berhasil menambahkan catatan stok ${movementType === "IN" ? "masuk" : movementType === "OUT" ? "keluar" : "koreksi"} untuk ${product?.name}.` 
+    });
   };
 
   if (loading) {

@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatRupiah } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
 import { ProductFormModal } from "@/components/admin/product-form-modal";
+import { toast } from "sonner";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
@@ -80,11 +81,12 @@ export default function ProductsPage() {
       if (!error) {
         setProducts(prev => prev.filter(p => p.id !== deleteId));
         setDeleteId(null);
+        toast.success("Produk berhasil dihapus", { description: deleteName });
       } else {
-        alert("Gagal menghapus produk: " + error.message);
+        toast.error("Gagal menghapus produk", { description: error.message });
       }
     } catch (err: any) {
-      alert("Kesalahan saat menghapus: " + err.message);
+      toast.error("Kesalahan saat menghapus", { description: err.message });
     } finally {
       setIsDeleting(false);
     }

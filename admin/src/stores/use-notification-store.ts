@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 export interface Notification {
   id: string;
@@ -112,8 +113,14 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
             notifications: [newNotif, ...state.notifications].slice(0, 30),
             unreadCount: state.unreadCount + 1,
           }));
+          
+          toast(newNotif.title, {
+            description: newNotif.message,
+            duration: 5000,
+          });
         }
       )
+
       .subscribe();
   },
 

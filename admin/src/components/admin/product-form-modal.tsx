@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Trash2, Upload } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Loader2, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface ProductFormModalProps {
   open: boolean;
@@ -34,6 +35,12 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
   const [isSavingVariant, setIsSavingVariant] = useState(false);
   const [detailProduct, setDetailProduct] = useState<any>(null);
 
+  // States foto produk
+  const [existingImages, setExistingImages] = useState<any[]>([]);
+  const [newImages, setNewImages] = useState<File[]>([]);
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const isEditMode = !!product;
 
   useEffect(() => {
@@ -46,6 +53,9 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
     setIsPreorder(false);
     setIsFeatured(false);
     setDetailProduct(null);
+    setExistingImages([]);
+    setNewImages([]);
+    setDeletedImageIds([]);
     setLoading(true);
 
     async function fetchData() {
@@ -55,10 +65,11 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
       if (cats) setCategories(cats);
 
       if (isEditMode && product?.id) {
-        // Fetch full product detail and variants
-        const [prodRes, varRes] = await Promise.all([
+        // Fetch full product detail, variants, and images
+        const [prodRes, varRes, imgRes] = await Promise.all([
           supabase.from("products").select("*").eq("id", product.id).single(),
-          supabase.from("product_variants").select("*").eq("product_id", product.id).order("created_at")
+          supabase.from("product_variants").select("*").eq("product_id", product.id).order("created_at"),
+          supabase.from("product_images").select("*").eq("product_id", product.id)
         ]);
         
         if (prodRes.data) {
@@ -68,6 +79,7 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
           setIsFeatured(!!prodRes.data.is_featured);
         }
         if (varRes.data) setVariants(varRes.data);
+        if (imgRes.data) setExistingImages(imgRes.data);
       }
       setLoading(false);
     }
@@ -75,7 +87,10 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
   }, [open, isEditMode, product?.id]);
 
   const handleAddVariant = async () => {
-    if (!newVariant.name || !newVariant.price) return alert("Nama dan Harga varian wajib diisi!");
+    if (!newVariant.name || !newVariant.price) {
+      toast.warning("Nama dan Harga varian wajib diisi!");
+      return;
+    }
     setIsSavingVariant(true);
 
     if (isEditMode) {
@@ -91,7 +106,10 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
       }).select().single();
       
       setIsSavingVariant(false);
-      if (error) return alert("Gagal menambah varian: " + error.message);
+      if (error) {
+        toast.error("Gagal menambah varian: " + error.message);
+        return;
+      }
       setVariants([...variants, data]);
     } else {
       // Simpan di local state dlu kalau mode Tambah
@@ -107,14 +125,43 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
       if (!confirm("Hapus varian ini?")) return;
       const supabase = createClient();
       const { error } = await supabase.from("product_variants").delete().eq("id", vid);
-      if (error) return alert("Gagal menghapus varian: " + error.message);
+      if (error) {
+        toast.error("Gagal menghapus varian: " + error.message);
+        return;
+      }
     }
     setVariants(variants.filter(v => v.id !== vid));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const validFiles = filesArray.filter(file => file.size <= 5 * 1024 * 1024 && file.type.startsWith("image/"));
+      if (validFiles.length !== filesArray.length) {
+        toast.warning("File Melebihi Maksimum 5MB", { description: "Beberapa file diabaikan karena ukurannya melebihi 5MB atau format tidak valid." });
+      }
+      setNewImages(prev => [...prev, ...validFiles]);
+    }
+    // reset input value so selecting the same file triggers onChange
+    if (e.target) e.target.value = '';
+  };
+
+  const removeExistingImage = (id: string) => {
+    if (!confirm("Hapus foto yang sudah ada?")) return;
+    setDeletedImageIds(prev => [...prev, id]);
+    setExistingImages(prev => prev.filter(img => img.id !== id));
+  };
+
+  const removeNewImage = (idx: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedCategory) return alert("Kategori wajib dipilih!");
+    if (!selectedCategory) {
+      toast.warning("Kategori wajib dipilih!");
+      return;
+    }
     setIsSaving(true);
     
     const form = e.currentTarget;
@@ -126,7 +173,8 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
 
     if (!isEditMode && (!name || !basePrice)) {
       setIsSaving(false);
-      return alert("Nama dan harga dasar wajib diisi!");
+      toast.warning("Nama dan harga dasar wajib diisi!");
+      return;
     }
 
     const payload = {
@@ -149,7 +197,32 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
       const { error } = await supabase.from("products").update(payload).eq("id", product.id);
       if (error) {
         setIsSaving(false);
-        return alert("Gagal menyimpan perubahan: " + error.message);
+        toast.error("Gagal menyimpan perubahan: " + error.message);
+        return;
+      }
+
+      const prodId = product.id;
+      
+      if (deletedImageIds.length > 0) {
+        await supabase.from("product_images").delete().in("id", deletedImageIds);
+      }
+
+      if (newImages.length > 0) {
+        try {
+          const uploadPromises = newImages.map(async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${prodId}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage.from("product_images").upload(fileName, file);
+            if (uploadError) throw uploadError;
+            const { data } = supabase.storage.from("product_images").getPublicUrl(fileName);
+            return { product_id: prodId, url: data.publicUrl };
+          });
+          const uploadedImages = await Promise.all(uploadPromises);
+          await supabase.from("product_images").insert(uploadedImages);
+        } catch (err: any) {
+          console.error("Gagal unggah foto:", err);
+          toast.error("Gagal mengunggah foto", { description: "Sedikit kendala akibat gangguan koneksi API Storage." });
+        }
       }
     } else {
       // Hit slug
@@ -161,7 +234,8 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
 
       if (error) {
         setIsSaving(false);
-        return alert("Gagal menyimpan produk: " + error.message);
+        toast.error("Gagal menyimpan produk: " + error.message);
+        return;
       }
 
       // Insert variants pending
@@ -176,9 +250,29 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
         }));
         await supabase.from("product_variants").insert(variantPayload);
       }
+
+      if (newImages.length > 0) {
+        try {
+          const uploadPromises = newImages.map(async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${newProd.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage.from("product_images").upload(fileName, file);
+            if (uploadError) throw uploadError;
+            const { data } = supabase.storage.from("product_images").getPublicUrl(fileName);
+            return { product_id: newProd.id, url: data.publicUrl };
+          });
+          const uploadedImages = await Promise.all(uploadPromises);
+          await supabase.from("product_images").insert(uploadedImages);
+        } catch (err: any) {
+          console.error("Gagal unggah foto:", err);
+        }
+      }
     }
 
     setIsSaving(false);
+    toast.success(isEditMode ? "Produk berhasil diperbarui" : "Produk baru berhasil ditambahkan", {
+      description: name || defaultData.name,
+    });
     onSuccess();
     onOpenChange(false);
   };
@@ -233,9 +327,32 @@ export function ProductFormModal({ open, onOpenChange, product, onSuccess }: Pro
               <Card>
                 <CardHeader><CardTitle className="text-base">Foto Produk</CardTitle></CardHeader>
                 <CardContent>
-                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition">
+                  {(existingImages.length > 0 || newImages.length > 0) && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                      {existingImages.map((img) => (
+                        <div key={img.id} className="relative aspect-square rounded-md border bg-muted overflow-hidden group">
+                          <img src={img.url} alt="Existing" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => removeExistingImage(img.id)} className="absolute top-2 right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {newImages.map((file, idx) => (
+                        <div key={idx} className="relative aspect-square rounded-md border bg-muted overflow-hidden group">
+                          <img src={URL.createObjectURL(file)} alt="New" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => removeNewImage(idx)} className="absolute top-2 right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <input type="file" ref={fileInputRef} hidden multiple accept="image/png, image/jpeg, image/webp" onChange={handleImageChange} />
+                  
+                  <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-border rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition">
                     <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                    <p className="text-sm text-muted-foreground">Klik atau drag foto baru ke sini</p>
+                    <p className="text-sm text-muted-foreground">Klik di sini untuk mengunggah foto baru</p>
                     <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP (Maks. 5MB)</p>
                   </div>
                 </CardContent>
