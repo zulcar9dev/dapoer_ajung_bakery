@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatRupiah, formatDate } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { DateTimePicker } from "@/components/admin/date-time-picker";
 
 export default function PromosPage() {
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -409,20 +410,24 @@ export default function PromosPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="start_date">Mulai Berlaku</Label>
-                  <Input 
-                    id="start_date" 
-                    type="datetime-local"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({...formData, start_date: e.target.value})}
+                  <DateTimePicker
+                    date={formData.start_date ? new Date(formData.start_date) : undefined}
+                    onChange={(date) => setFormData({
+                      ...formData, 
+                      start_date: date ? date.toISOString() : ""
+                    })}
+                    placeholder="Pilih Tanggal Mulai"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="end_date">Berakhir</Label>
-                  <Input 
-                    id="end_date" 
-                    type="datetime-local"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({...formData, end_date: e.target.value})}
+                  <DateTimePicker
+                    date={formData.end_date ? new Date(formData.end_date) : undefined}
+                    onChange={(date) => setFormData({
+                      ...formData, 
+                      end_date: date ? date.toISOString() : ""
+                    })}
+                    placeholder="Pilih Tanggal Berakhir"
                   />
                 </div>
               </div>
