@@ -75,7 +75,11 @@ export default function OrdersPage() {
               <Input placeholder="Cari no. pesanan atau nama..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-[180px]">
+                <span className="truncate block text-left flex-1">
+                  {statusFilter === "all" ? "Semua Status" : statusFilter}
+                </span>
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 {ALL_STATUSES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}

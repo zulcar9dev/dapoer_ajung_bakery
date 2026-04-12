@@ -40,7 +40,7 @@ const MENU_ITEMS: {
   {
     group: "Pemasaran",
     items: [
-      { label: "Promo", href: "/promos", icon: Ticket, roles: ["OWNER", "STAFF"] },
+      { label: "Promo", href: "/promos", icon: Ticket, roles: ["OWNER"] },
       { label: "Review", href: "/reviews", icon: Star, roles: ["OWNER", "STAFF"] },
     ],
   },
@@ -55,7 +55,7 @@ const MENU_ITEMS: {
     items: [
       { label: "Laporan", href: "/reports", icon: BarChart3, roles: ["OWNER"] },
       { label: "Pengguna", href: "/users", icon: Users, roles: ["OWNER"] },
-      { label: "Pengaturan", href: "/settings", icon: Settings, roles: ["OWNER", "STAFF"] },
+      { label: "Pengaturan", href: "/settings", icon: Settings, roles: ["OWNER"] },
     ],
   },
 ];

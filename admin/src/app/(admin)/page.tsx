@@ -23,6 +23,8 @@ export default function DashboardPage() {
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [todayOrders, setTodayOrders] = useState(0);
   const [activeProducts, setActiveProducts] = useState(0);
+  const [revenueTrend, setRevenueTrend] = useState(0);
+  const [ordersTrend, setOrdersTrend] = useState(0);
   
   const [salesData, setSalesData] = useState<any[]>([]);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -43,7 +45,12 @@ export default function DashboardPage() {
       // 2. Fetch today's boundaries
       const startOfDay = new Date();
       startOfDay.setHours(0,0,0,0);
-      const isoStart = startOfDay.toISOString();
+      
+      const startOfYesterday = new Date(startOfDay);
+      startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+      
+      const endOfYesterday = new Date(startOfDay);
+      endOfYesterday.setMilliseconds(endOfYesterday.getMilliseconds() - 1);
 
       // 3. Aggregate Orders
       const { data: orders } = await supabase
@@ -54,27 +61,40 @@ export default function DashboardPage() {
       if (orders) {
         let rev = 0;
         let ords = 0;
+        let yesterdayRev = 0;
+        let yesterdayOrds = 0;
         
         const tempSales: Record<string, number> = {};
 
         orders.forEach(o => {
-          // Today stats
-          if (new Date(o.created_at) >= startOfDay) {
+          const createdAt = new Date(o.created_at);
+          
+          // Today & Yesterday stats
+          if (createdAt >= startOfDay) {
             ords += 1;
             if (["COMPLETED", "DELIVERED", "READY"].includes(o.status)) {
               rev += o.total;
+            }
+          } else if (createdAt >= startOfYesterday && createdAt <= endOfYesterday) {
+            yesterdayOrds += 1;
+            if (["COMPLETED", "DELIVERED", "READY"].includes(o.status)) {
+              yesterdayRev += o.total;
             }
           }
           
           // Sales chart (all time grouped by date)
           if (["COMPLETED", "DELIVERED", "READY"].includes(o.status)) {
-            const dateStr = new Date(o.created_at).toLocaleDateString("id-ID", { day: '2-digit', month: 'short' });
+            const dateStr = createdAt.toLocaleDateString("id-ID", { day: '2-digit', month: 'short' });
             tempSales[dateStr] = (tempSales[dateStr] || 0) + o.total;
           }
         });
 
+        const calcTrend = (today: number, yest: number) => yest === 0 ? (today > 0 ? 100 : 0) : ((today - yest) / yest) * 100;
+
         setTodayRevenue(rev);
         setTodayOrders(ords);
+        setRevenueTrend(parseFloat(calcTrend(rev, yesterdayRev).toFixed(1)));
+        setOrdersTrend(parseFloat(calcTrend(ords, yesterdayOrds).toFixed(1)));
         setRecentOrders(orders.slice(0, 5));
         
         setSalesData(Object.keys(tempSales).map(k => ({ date: k, revenue: tempSales[k] })));
@@ -125,19 +145,18 @@ export default function DashboardPage() {
         <StatsCard
           title="Pendapatan Hari Ini"
           value={formatRupiah(todayRevenue)}
-          trend={12.5}
+          trend={revenueTrend}
           icon={TrendingUp}
         />
         <StatsCard
           title="Pesanan Hari Ini"
           value={String(todayOrders)}
-          trend={5.2}
+          trend={ordersTrend}
           icon={ShoppingBag}
         />
         <StatsCard
           title="Pesanan Aktif"
           value={String(recentOrders.filter(o => !["COMPLETED", "CANCELLED"].includes(o.status)).length)}
-          trend={-2.4}
           icon={Package}
         />
         <StatsCard
