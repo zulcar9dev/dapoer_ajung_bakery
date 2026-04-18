@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { formatRupiah, formatDate } from "@shared/utils";
@@ -336,15 +337,21 @@ export default function PromosPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="type">Tipe Diskon</Label>
-                  <select
-                    id="type"
+                  <Select
                     value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
-                    className="flex h-8 w-full items-center rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                    onValueChange={(val) => setFormData({...formData, type: val || "FIXED"})}
                   >
-                    <option value="FIXED">Nominal (Rp)</option>
-                    <option value="PERCENTAGE">Persentase (%)</option>
-                  </select>
+                    <SelectTrigger id="type" className="w-full">
+                      <span className="flex-1 text-left block truncate">
+                        {formData.type === "FIXED" ? "Nominal" : 
+                         formData.type === "PERCENTAGE" ? "Persentase (%)" : "Pilih tipe diskon"}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FIXED">Nominal</SelectItem>
+                      <SelectItem value="PERCENTAGE">Persentase (%)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="value">Nilai Diskon</Label>
