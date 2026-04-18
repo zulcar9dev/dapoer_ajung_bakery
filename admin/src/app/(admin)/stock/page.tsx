@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { formatDateTime } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { TableSkeleton, StatsCardsSkeleton } from "@/components/admin/loading-skeletons";
 import { toast } from "sonner";
 
 export default function StockPage() {
@@ -192,8 +193,14 @@ export default function StockPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div><div className="h-7 w-36 bg-muted rounded animate-pulse" /><div className="h-4 w-52 bg-muted rounded animate-pulse mt-1" /></div>
+          <div className="h-9 w-36 bg-muted rounded animate-pulse" />
+        </div>
+        <StatsCardsSkeleton count={3} />
+        <TableSkeleton rows={5} cols={4} />
+        <TableSkeleton rows={5} cols={5} />
       </div>
     );
   }
@@ -245,7 +252,7 @@ export default function StockPage() {
         <CardHeader className="flex flex-col sm:flex-row items-center justify-between py-4 space-y-2 sm:space-y-0">
           <CardTitle className="text-base flex items-center gap-2"><ArrowUpDown className="h-4 w-4" />Riwayat Pergerakan Stok</CardTitle>
           <div className="flex items-center gap-2">
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
+            <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v ?? "all")}>
               <SelectTrigger className="w-[140px] h-8 text-xs">
                 {timeFilter === "today" ? "Hari Ini" : timeFilter === "7days" ? "7 Hari Terakhir" : timeFilter === "30days" ? "30 Hari Terakhir" : "Semua Waktu"}
               </SelectTrigger>
@@ -300,7 +307,7 @@ export default function StockPage() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label>Produk</Label>
-              <Select value={selectedProduct} onValueChange={(v) => { setSelectedProduct(v); setSelectedVariant(""); }}>
+              <Select value={selectedProduct} onValueChange={(v) => { setSelectedProduct(v ?? ""); setSelectedVariant(""); }}>
                 <SelectTrigger><span className="truncate text-left block">{selectedProduct ? products.find(p => p.id === selectedProduct)?.name : "Pilih produk..."}</span></SelectTrigger>
                 <SelectContent>
                   {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -311,7 +318,7 @@ export default function StockPage() {
             {selectedProduct && products.find(p => p.id === selectedProduct)?.variants?.length > 0 && (
               <div className="space-y-2">
                 <Label>Varian (Opsional)</Label>
-                <Select value={selectedVariant} onValueChange={setSelectedVariant}>
+                <Select value={selectedVariant} onValueChange={(v) => setSelectedVariant(v ?? "")}>
                   <SelectTrigger><span className="truncate text-left block">{selectedVariant ? products.find(p => p.id === selectedProduct)?.variants?.find((v:any) => v.id === selectedVariant)?.name : "Tanpa varian / akumulasi"}</span></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Tanpa varian / akumulasi</SelectItem>
@@ -326,7 +333,7 @@ export default function StockPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipe</Label>
-                <Select value={movementType} onValueChange={setMovementType}>
+                <Select value={movementType} onValueChange={(v) => setMovementType(v ?? "IN")}>
                   <SelectTrigger><span className="truncate">{movementType === "IN" ? "Masuk (+)" : movementType === "OUT" ? "Keluar (-)" : "Koreksi (=)"}</span></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="IN">Masuk (+)</SelectItem>

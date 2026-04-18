@@ -1,50 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { Loader2 } from "lucide-react";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading, initialize } = useAuthStore();
-  const [initialized, setInitialized] = useState(false);
+  const { isAuthenticated, isLoading, _initialized, initialize } = useAuthStore();
 
-  // Initialize auth on mount — check Supabase session
+  // Initialize auth hanya jika belum pernah diinisialisasi
   useEffect(() => {
-    initialize().then(() => setInitialized(true));
-  }, [initialize]);
+    if (!_initialized) {
+      initialize();
+    }
+  }, [_initialized, initialize]);
 
-  // Redirect if not authenticated after initialization
+  // Redirect jika sudah diinisialisasi & tidak terautentikasi
   useEffect(() => {
-    if (initialized && !isLoading && !isAuthenticated) {
+    if (_initialized && !isLoading && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [initialized, isLoading, isAuthenticated, router]);
+  }, [_initialized, isLoading, isAuthenticated, router]);
 
-  // Show loading while checking session
-  if (!initialized || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Memuat...</p>
-        </div>
-      </div>
-    );
+  // Fast-path: jika sudah authenticated, langsung render
+  if (_initialized && isAuthenticated) {
+    return <>{children}</>;
   }
 
-  // Redirect if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Mengalihkan ke halaman login...</p>
-        </div>
+  // Loading spinner saat menunggu inisialisasi
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">
+          {!_initialized ? "Memuat..." : "Mengalihkan ke halaman login..."}
+        </p>
       </div>
-    );
-  }
-
-  return <>{children}</>;
+    </div>
+  );
 }

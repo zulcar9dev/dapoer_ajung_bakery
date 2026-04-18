@@ -107,7 +107,7 @@ export const useNotificationStore = create<NotificationState>()((set, get) => ({
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications" },
-        (payload) => {
+        (payload: any) => {
           const newNotif = payload.new as Notification;
           set((state) => ({
             notifications: [newNotif, ...state.notifications].slice(0, 30),

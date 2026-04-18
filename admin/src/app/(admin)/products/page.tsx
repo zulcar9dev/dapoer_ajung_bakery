@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { Search, Plus, Edit, Loader2, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatRupiah } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
-import { ProductFormModal } from "@/components/admin/product-form-modal";
+import { TableSkeleton } from "@/components/admin/loading-skeletons";
 import { toast } from "sonner";
+
+// ⚡ Lazy load modal berat (22KB) — hanya diunduh saat user klik Tambah/Edit
+const ProductFormModal = dynamic(
+  () => import("@/components/admin/product-form-modal").then((mod) => ({ default: mod.ProductFormModal })),
+  { ssr: false }
+);
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
@@ -94,8 +101,12 @@ export default function ProductsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div><div className="h-7 w-24 bg-muted rounded animate-pulse" /><div className="h-4 w-40 bg-muted rounded animate-pulse mt-1" /></div>
+          <div className="h-9 w-36 bg-muted rounded animate-pulse" />
+        </div>
+        <TableSkeleton rows={6} cols={7} />
       </div>
     );
   }

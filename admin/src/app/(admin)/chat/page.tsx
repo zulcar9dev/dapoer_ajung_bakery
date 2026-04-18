@@ -63,7 +63,7 @@ export default function ChatPage() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
+        (payload: any) => {
           const newMsg = payload.new;
           
           // If the message belongs to current convo, append it to view

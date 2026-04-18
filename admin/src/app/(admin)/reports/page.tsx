@@ -1,18 +1,77 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { BarChart3, TrendingUp, DollarSign, ShoppingBag, Loader2 } from "lucide-react";
+import dynamic from "next/dynamic";
+import { BarChart3, TrendingUp, DollarSign, ShoppingBag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartCard } from "@/components/admin/chart-card";
 import { StatsCard } from "@/components/admin/stats-card";
+import { DashboardSkeleton } from "@/components/admin/loading-skeletons";
 import { formatRupiah } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell,
-} from "recharts";
 
 const COLORS = ["#D4A574", "#B8956A", "#A0845E", "#8B7355", "#6F5B3E", "#A0522D", "#8B4513"];
+
+// ⚡ Lazy load chart components — hanya diunduh jika data sudah tersedia
+import { ChartCard } from "@/components/admin/chart-card";
+
+const LazyLineChart = dynamic(
+  () => import("recharts").then((mod) => {
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = mod;
+    return {
+      default: ({ data }: { data: any[] }) => (
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+            <Tooltip formatter={(value) => [formatRupiah(Number(value)), "Pendapatan"]} contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)" }} />
+            <Line type="monotone" dataKey="revenue" stroke="var(--color-primary, #D4A574)" strokeWidth={2} dot={true} />
+          </LineChart>
+        </ResponsiveContainer>
+      ),
+    };
+  }),
+  { ssr: false, loading: () => <div className="h-[300px] flex items-center justify-center text-muted-foreground">Memuat grafik...</div> }
+);
+
+const LazyBarChart = dynamic(
+  () => import("recharts").then((mod) => {
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = mod;
+    return {
+      default: ({ data }: { data: any[] }) => (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+            <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip formatter={(value) => [Number(value), "Pesanan"]} contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)" }} />
+            <Bar dataKey="orders" fill="var(--color-primary, #D4A574)" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      ),
+    };
+  }),
+  { ssr: false, loading: () => <div className="h-[300px] flex items-center justify-center text-muted-foreground">Memuat grafik...</div> }
+);
+
+const LazyPieChart = dynamic(
+  () => import("recharts").then((mod) => {
+    const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } = mod;
+    return {
+      default: ({ data, colors }: { data: any[]; colors: string[] }) => (
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="totalSold">
+              {data.map((_, index) => (<Cell key={`cell-${index}`} fill={colors[index % colors.length]} />))}
+            </Pie>
+            <Tooltip />
+          </PieChart>
+        </ResponsiveContainer>
+      ),
+    };
+  }),
+  { ssr: false, loading: () => <div className="h-[250px] flex items-center justify-center text-muted-foreground">Memuat grafik...</div> }
+);
 
 export default function ReportsPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -23,22 +82,22 @@ export default function ReportsPage() {
     async function fetchData() {
       const supabase = createClient();
       
-      // Fetch successful orders with items
-      const { data: oData } = await supabase
-        .from("orders")
-        .select(`
-          id, total, created_at,
-          items:order_items(product_name, quantity, subtotal)
-        `)
-        .in("status", ["COMPLETED", "DELIVERED", "READY"]);
-      
-      // Fetch total active products
-      const { count } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true });
+      // ⚡ PARALEL: kedua query dijalankan bersamaan
+      const [oRes, cRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select(`
+            id, total, created_at,
+            items:order_items(product_name, quantity, subtotal)
+          `)
+          .in("status", ["COMPLETED", "DELIVERED", "READY"]),
+        supabase
+          .from("products")
+          .select("*", { count: "exact", head: true }),
+      ]);
 
-      setOrders(oData || []);
-      setProductsCount(count || 0);
+      setOrders(oRes.data || []);
+      setProductsCount(cRes.count || 0);
       setLoading(false);
     }
     fetchData();
@@ -54,13 +113,11 @@ export default function ReportsPage() {
     orders.forEach((o) => {
       tRev += o.total;
       
-      // Daily agg
       const date = new Date(o.created_at).toLocaleDateString("id-ID", { day: '2-digit', month: 'short' });
       if (!daily[date]) daily[date] = { revenue: 0, orders: 0 };
       daily[date].revenue += o.total;
       daily[date].orders += 1;
 
-      // Product agg
       if (o.items) {
         o.items.forEach((item: any) => {
           if (!productStats[item.product_name]) productStats[item.product_name] = { totalSold: 0, revenue: 0 };
@@ -84,7 +141,7 @@ export default function ReportsPage() {
     return { salesData: sData, topProducts: tProducts, totalRevenue: tRev, totalOrders: orders.length };
   }, [orders]);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -98,38 +155,19 @@ export default function ReportsPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
         <ChartCard title="Pendapatan per Hari">
           {salesData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(value) => [formatRupiah(Number(value)), "Pendapatan"]} contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)" }} />
-                <Line type="monotone" dataKey="revenue" stroke="var(--color-primary, #D4A574)" strokeWidth={2} dot={true} />
-              </LineChart>
-            </ResponsiveContainer>
+            <LazyLineChart data={salesData} />
           ) : <div className="h-[300px] flex items-center justify-center text-muted-foreground">Belum ada data cukup</div>}
         </ChartCard>
 
-        {/* Orders Chart */}
         <ChartCard title="Pesanan per Hari">
           {salesData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={salesData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value) => [Number(value), "Pesanan"]} contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)" }} />
-                <Bar dataKey="orders" fill="var(--color-primary, #D4A574)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <LazyBarChart data={salesData} />
           ) : <div className="h-[300px] flex items-center justify-center text-muted-foreground">Belum ada data cukup</div>}
         </ChartCard>
       </div>
 
-      {/* Top Products */}
       <div className="grid lg:grid-cols-[1fr_300px] gap-6">
         <Card>
           <CardHeader><CardTitle className="text-base">Produk Terlaris</CardTitle></CardHeader>
@@ -149,17 +187,9 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Composition Chart */}
         <ChartCard title="Komposisi Penjualan">
           {topProducts.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={topProducts} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={2} dataKey="totalSold">
-                  {topProducts.map((_, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            <LazyPieChart data={topProducts} colors={COLORS} />
           ) : <div className="h-[250px] flex items-center justify-center text-muted-foreground">Belum ada data cukup</div>}
         </ChartCard>
       </div>

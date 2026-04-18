@@ -13,6 +13,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
+import { TableSkeleton } from "@/components/admin/loading-skeletons";
 import { formatRupiah, formatDateTime } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
 import type { OrderStatus } from "@shared/types";
@@ -54,8 +55,9 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div><div className="h-7 w-24 bg-muted rounded animate-pulse" /><div className="h-4 w-48 bg-muted rounded animate-pulse mt-1" /></div>
+        <TableSkeleton rows={6} cols={7} />
       </div>
     );
   }

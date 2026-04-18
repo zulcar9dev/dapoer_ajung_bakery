@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { BarChart3, ShoppingBag, Package, TrendingUp, AlertTriangle, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { BarChart3, ShoppingBag, Package, TrendingUp, AlertTriangle } from "lucide-react";
 import { StatsCard } from "@/components/admin/stats-card";
-import { ChartCard } from "@/components/admin/chart-card";
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
+import { DashboardSkeleton } from "@/components/admin/loading-skeletons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -12,13 +13,38 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { formatRupiah, formatRelativeTime } from "@shared/utils";
 import { createClient } from "@/lib/supabase/client";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+import { useAuthStore } from "@/stores/use-auth-store";
+
+// Lazy load Recharts — ~200KB tidak perlu di-download awal
+const LazyBarChart = dynamic(
+  () => import("recharts").then((mod) => {
+    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = mod;
+    // Wrap dalam komponen fungsional
+    return {
+      default: ({ data }: { data: any[] }) => (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+            <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} dy={10} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} dx={-10} tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
+            <Tooltip
+              cursor={{ fill: "var(--muted)", opacity: 0.2 }}
+              contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+              formatter={(value) => [formatRupiah(Number(value)), "Pendapatan"]}
+            />
+            <Bar dataKey="revenue" fill="var(--color-primary, #D4A574)" radius={[4, 4, 0, 0]} maxBarSize={40} />
+          </BarChart>
+        </ResponsiveContainer>
+      ),
+    };
+  }),
+  { ssr: false, loading: () => <div className="h-[300px] flex items-center justify-center text-muted-foreground">Memuat grafik...</div> }
+);
+
+import { ChartCard } from "@/components/admin/chart-card";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [adminName, setAdminName] = useState("Admin");
   
   const [todayRevenue, setTodayRevenue] = useState(0);
   const [todayOrders, setTodayOrders] = useState(0);
@@ -30,19 +56,13 @@ export default function DashboardPage() {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
 
+  // Ambil nama dari cache store — tanpa query tambahan
+  const adminName = useAuthStore((s) => s.user?.name) || "Admin";
+
   useEffect(() => {
     async function loadDashboard() {
       const supabase = createClient();
       
-      // 1. Get current admin
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        const { data: userData } = await supabase.from("users").select("name").eq("id", session.user.id).single();
-        if (userData) setAdminName(userData.name);
-        else setAdminName(session.user.user_metadata?.full_name || session.user.email?.split("@")[0] || "Admin");
-      }
-
-      // 2. Fetch today's boundaries
       const startOfDay = new Date();
       startOfDay.setHours(0,0,0,0);
       
@@ -52,11 +72,19 @@ export default function DashboardPage() {
       const endOfYesterday = new Date(startOfDay);
       endOfYesterday.setMilliseconds(endOfYesterday.getMilliseconds() - 1);
 
-      // 3. Aggregate Orders
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("id, total, status, created_at, customer_name, order_number")
-        .order("created_at", { ascending: false });
+      // ⚡ PARALEL: semua query dijalankan bersamaan
+      const [ordersRes, productsRes] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("id, total, status, created_at, customer_name, order_number")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("products")
+          .select("id, name, total_stock, is_active"),
+      ]);
+
+      const orders = ordersRes.data;
+      const products = productsRes.data;
 
       if (orders) {
         let rev = 0;
@@ -66,10 +94,9 @@ export default function DashboardPage() {
         
         const tempSales: Record<string, number> = {};
 
-        orders.forEach(o => {
+        orders.forEach((o: any) => {
           const createdAt = new Date(o.created_at);
           
-          // Today & Yesterday stats
           if (createdAt >= startOfDay) {
             ords += 1;
             if (["COMPLETED", "DELIVERED", "READY"].includes(o.status)) {
@@ -82,7 +109,6 @@ export default function DashboardPage() {
             }
           }
           
-          // Sales chart (all time grouped by date)
           if (["COMPLETED", "DELIVERED", "READY"].includes(o.status)) {
             const dateStr = createdAt.toLocaleDateString("id-ID", { day: '2-digit', month: 'short' });
             tempSales[dateStr] = (tempSales[dateStr] || 0) + o.total;
@@ -100,15 +126,10 @@ export default function DashboardPage() {
         setSalesData(Object.keys(tempSales).map(k => ({ date: k, revenue: tempSales[k] })));
       }
 
-      // 4. Products & Low Stock
-      const { data: products } = await supabase
-        .from("products")
-        .select("id, name, total_stock, is_active");
-        
       if (products) {
-        setActiveProducts(products.filter(p => p.is_active).length);
+        setActiveProducts(products.filter((p: any) => p.is_active).length);
         setLowStockProducts(
-          products.filter(p => p.total_stock <= 15).sort((a,b) => a.total_stock - b.total_stock).slice(0, 5)
+          products.filter((p: any) => p.total_stock <= 15).sort((a: any, b: any) => a.total_stock - b.total_stock).slice(0, 5)
         );
       }
 
@@ -126,7 +147,7 @@ export default function DashboardPage() {
     return "Selamat Malam";
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div className="space-y-6">
@@ -172,19 +193,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
           <ChartCard title="Grafik Penjualan">
             {salesData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
-                  <XAxis dataKey="date" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} dy={10} />
-                  <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "var(--muted-foreground)" }} dx={-10} tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`} />
-                  <Tooltip
-                    cursor={{ fill: "var(--muted)", opacity: 0.2 }}
-                    contentStyle={{ borderRadius: "8px", border: "1px solid var(--border)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                    formatter={(value) => [formatRupiah(Number(value)), "Pendapatan"]}
-                  />
-                  <Bar dataKey="revenue" fill="var(--color-primary, #D4A574)" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                </BarChart>
-              </ResponsiveContainer>
+              <LazyBarChart data={salesData} />
             ) : <div className="h-[300px] flex items-center justify-center text-muted-foreground">Belum ada data cukup</div>}
           </ChartCard>
 

@@ -207,7 +207,7 @@ export default function EditProductPage() {
               </div>
               <div className="space-y-1.5 w-[100px]">
                 <Label className="text-xs">Tipe</Label>
-                <Select value={newVariant.type} onValueChange={(v) => setNewVariant({ ...newVariant, type: v })}>
+                <Select value={newVariant.type} onValueChange={(v) => setNewVariant({ ...newVariant, type: v || "SIZE" })}>
                   <SelectTrigger><span className="truncate">{newVariant.type === "SIZE" ? "Ukuran" : newVariant.type === "FLAVOR" ? "Rasa" : newVariant.type}</span></SelectTrigger>
                   <SelectContent><SelectItem value="SIZE">Ukuran</SelectItem><SelectItem value="FLAVOR">Rasa</SelectItem></SelectContent>
                 </Select>

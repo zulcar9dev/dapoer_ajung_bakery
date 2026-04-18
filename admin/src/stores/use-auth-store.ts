@@ -21,6 +21,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  _initialized: boolean;
 
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -36,13 +37,19 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   isAuthenticated: false,
   isLoading: true,
   error: null,
+  _initialized: false,
 
   initialize: async () => {
+    // Fast-path: jika sudah pernah diinisialisasi, skip seluruhnya
+    if (get()._initialized) return;
+
     try {
+      // getSession() membaca dari local storage — CEPAT, tidak roundtrip ke server
+      // Middleware sudah memvalidasi user via getUser(), jadi aman.
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user) {
-        // Fetch profile from our users table
+        // Fetch profile dari tabel users (hanya 1x saat pertama)
         const { data: profile } = await supabase
           .from("users")
           .select("*")
@@ -55,14 +62,15 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             user: profile as AppUser,
             isAuthenticated: true,
             isLoading: false,
+            _initialized: true,
           });
           return;
         }
       }
 
-      set({ user: null, supabaseUser: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, supabaseUser: null, isAuthenticated: false, isLoading: false, _initialized: true });
     } catch {
-      set({ user: null, supabaseUser: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, supabaseUser: null, isAuthenticated: false, isLoading: false, _initialized: true });
     }
   },
 
@@ -105,6 +113,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         isAuthenticated: true,
         isLoading: false,
         error: null,
+        _initialized: true,
       });
       return true;
     }
@@ -115,7 +124,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   logout: async () => {
     await supabase.auth.signOut();
-    set({ user: null, supabaseUser: null, isAuthenticated: false, error: null });
+    set({ user: null, supabaseUser: null, isAuthenticated: false, error: null, _initialized: false });
   },
 
   clearError: () => {
