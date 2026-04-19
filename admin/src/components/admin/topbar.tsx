@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { useUIStore } from "@/stores/use-ui-store";
 import { useNotificationStore, type Notification } from "@/stores/use-notification-store";
+import { toast } from "sonner";
 
 // Format waktu relatif (misal: "2 menit lalu")
 function timeAgo(dateStr: string): string {
@@ -79,8 +80,10 @@ export function Topbar() {
   }, [fetchNotifications, subscribeRealtime, unsubscribeRealtime]);
 
   const handleLogout = async () => {
+    toast.loading("Keluar dari sistem...", { id: "logout-toast" });
     await logout();
-    router.push("/login");
+    toast.success("Berhasil keluar", { id: "logout-toast", duration: 2000 });
+    // router.push tidak lagi diperlukan karena AuthGuard akan otomatis melakukan redirect saat isAuthenticated berubah jadi false.
   };
 
   const handleNotifClick = async (notif: Notification) => {

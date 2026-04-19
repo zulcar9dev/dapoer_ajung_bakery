@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,11 +25,16 @@ export default function LoginPage() {
     if (!email || !password) return;
 
     setIsSubmitting(true);
+    toast.loading("Mengecek kredensial akun...", { id: "login-toast" });
+    
     const success = await login(email, password);
     setIsSubmitting(false);
     
     if (success) {
+      toast.success("Otorisasi berhasil! Membuka dashboard...", { id: "login-toast", duration: 2500 });
       router.push("/");
+    } else {
+      toast.dismiss("login-toast");
     }
   };
 

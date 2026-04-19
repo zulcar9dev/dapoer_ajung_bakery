@@ -47,7 +47,8 @@ export default function ProductsPage() {
         .select(`
           *,
           category:categories(name),
-          images:product_images(url)
+          images:product_images(url),
+          variants:product_variants(id, name, stock, price)
         `)
         .order("created_at", { ascending: false }),
       supabase.from("categories").select("id, name").order("name")
@@ -138,21 +139,68 @@ export default function ProductsPage() {
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader><TableRow><TableHead className="w-[50px]"></TableHead><TableHead>Produk</TableHead><TableHead>Kategori</TableHead><TableHead>Harga</TableHead><TableHead>Stok</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead className="w-[50px]"></TableHead><TableHead>Produk</TableHead><TableHead>Kategori</TableHead><TableHead>Harga</TableHead><TableHead>Varian & Stok</TableHead><TableHead>Info & Status</TableHead><TableHead className="text-right">Aksi</TableHead></TableRow></TableHeader>
             <TableBody>
               {filtered.map((p) => {
                 const imgUrl = p.images?.[0]?.url || "/images/placeholder.jpg";
                 const catName = p.category?.[0]?.name || p.category?.name || "Kategori";
                 const tags = p.tags || [];
+                const variants = p.variants || [];
 
                 return (
                   <TableRow key={p.id}>
                     <TableCell><div className="relative w-10 h-10 rounded-md overflow-hidden bg-muted"><Image src={imgUrl} alt={p.name} fill className="object-cover" sizes="40px" /></div></TableCell>
-                    <TableCell><p className="text-sm font-medium">{p.name}</p> {tags.length > 0 && <p className="text-xs text-muted-foreground">{tags.join(", ")}</p>}</TableCell>
+                    <TableCell className="max-w-[200px]">
+                      <p className="text-sm font-medium">{p.name}</p>
+                      {tags.length > 0 && <p className="text-[10px] text-muted-foreground mt-0.5">{tags.join(", ")}</p>}
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        {p.weight ? `${p.weight}gr` : "-"} • {p.shelf_life ? `Tahan ${p.shelf_life}` : "-"}
+                      </p>
+                    </TableCell>
                     <TableCell className="text-sm">{catName}</TableCell>
-                    <TableCell className="text-sm font-medium">{formatRupiah(p.discount_price || p.base_price)}</TableCell>
-                    <TableCell><Badge variant="outline" className={p.total_stock <= 10 ? "border-destructive text-destructive" : ""}>{p.total_stock}</Badge></TableCell>
-                    <TableCell><Badge variant={p.is_available ? "default" : "outline"} className={p.is_available ? "bg-success/10 text-success border-success/20" : ""}>{p.is_available ? "Aktif" : "Nonaktif"}</Badge></TableCell>
+                    <TableCell>
+                      {p.discount_price && p.discount_price < p.base_price ? (
+                        <div className="flex flex-col">
+                          <span className="text-xs line-through text-muted-foreground">{formatRupiah(p.base_price)}</span>
+                          <span className="text-sm font-bold text-success mt-0.5">{formatRupiah(p.discount_price)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium">{formatRupiah(p.base_price)}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <Badge variant="outline" className={p.total_stock <= 10 ? "border-destructive text-destructive font-medium" : "font-medium"}>
+                          Total: {p.total_stock}
+                        </Badge>
+                        {variants.length > 0 && (
+                          <div className="flex flex-col gap-1 mt-0.5 max-w-[220px]">
+                            {variants.map((v: any) => (
+                              <span key={v.id} className="text-[10px] bg-muted/60 text-muted-foreground px-2 py-1 rounded-sm border truncate">
+                                {v.name} &bull; {formatRupiah(v.price)} (Stok: {v.stock})
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1.5 items-start">
+                        <Badge variant={p.is_available ? "default" : "outline"} className={p.is_available ? "bg-success/10 text-success border-success/20 font-medium" : "font-medium"}>
+                          {p.is_available ? "Aktif" : "Nonaktif"}
+                        </Badge>
+                        {p.is_pre_order_only && (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-300 font-medium">
+                            Pre-Order
+                          </Badge>
+                        )}
+                        {p.is_featured && (
+                          <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-300 font-medium">
+                            Best Seller
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => confirmDelete(p.id, p.name)}>

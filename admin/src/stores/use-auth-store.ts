@@ -123,8 +123,11 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
-    await supabase.auth.signOut();
-    set({ user: null, supabaseUser: null, isAuthenticated: false, error: null, _initialized: false });
+    // 1. Optimistic Update: Langsung hapus state lokal untuk merender ulang UI seketika
+    set({ user: null, supabaseUser: null, isAuthenticated: false, error: null, _initialized: true });
+    
+    // 2. Tarik proses jaringan (network request) ke background
+    supabase.auth.signOut().catch(console.error);
   },
 
   clearError: () => {
