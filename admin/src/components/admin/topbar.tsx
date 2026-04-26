@@ -97,16 +97,7 @@ export function Topbar() {
 
   return (
     <header className="sticky top-0 z-40 h-16 bg-card/95 backdrop-blur-md border-b border-border flex items-center px-4 lg:px-6 gap-4">
-      {/* Mobile menu toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleMobileSidebar}
-        className="lg:hidden text-muted-foreground"
-        aria-label="Toggle sidebar"
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
+      {/* Mobile menu toggle removed as sidebar is now permanent */}
 
       {/* Spacer */}
       <div className="flex-1" />
