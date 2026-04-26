@@ -74,8 +74,9 @@ export function Sidebar() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Jalankan timer saat mount hanya jika tidak sedang di-pin
-    if (!isSidebarPinned) {
+    // Hanya saat mount: jika sidebar terbuka tapi tidak di-pin (dari persisted state),
+    // collapse otomatis setelah 5 detik jika user tidak hover.
+    if (!isSidebarPinned && !isSidebarCollapsed) {
       timerRef.current = setTimeout(() => {
         setSidebarCollapsed(true);
       }, 5000);
@@ -84,7 +85,8 @@ export function Sidebar() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [setSidebarCollapsed, isSidebarPinned]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMouseEnter = () => {
     if (isSidebarPinned) return;
