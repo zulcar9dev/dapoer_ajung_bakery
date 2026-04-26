@@ -109,6 +109,8 @@ export function Sidebar() {
 
   return (
     <aside
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
         "flex flex-col h-screen sticky top-0 bg-card border-r border-border transition-all duration-300 z-40",
         isSidebarCollapsed ? "w-[72px]" : "w-64"
@@ -140,12 +142,12 @@ export function Sidebar() {
           size="icon"
           onClick={(e) => {
             e.preventDefault();
-            if (isSidebarCollapsed) {
-              setSidebarCollapsed(false);
+            if (!isSidebarPinned) {
               setSidebarPinned(true);
+              setSidebarCollapsed(false);
             } else {
-              setSidebarCollapsed(true);
               setSidebarPinned(false);
+              setSidebarCollapsed(true);
             }
           }}
           className={cn(
@@ -163,11 +165,7 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav 
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className="flex-1 overflow-y-auto py-4 px-3 space-y-6"
-      >
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
         {filteredMenu.map((group) => (
           <div key={group.group}>
             {!isSidebarCollapsed && (
